@@ -1,0 +1,55 @@
+@startuml
+hide methods
+hide stereotypes
+skinparam classAttributeIconSize 0
+
+class Pessoa {
+    +String nome
+    +String cpf
+    +String telefone
+}
+
+class Cliente {
+    +List<Aluguel> historicoAlugueis
+}
+
+class Veiculo {
+    +String marca
+    +String modelo
+    +String placa
+    +double precoBaseDiaria
+    +boolean disponivel
+}
+
+class CarroPasseio {
+    -double TAXA_PASSEIO
+}
+
+class Caminhonete {
+    -double TAXA_CAMINHONETE
+}
+
+class Aluguel {
+    +Cliente cliente
+    +Veiculo veiculo
+    +LocalDate dataInicio
+    +int dias
+    +double valorTotal
+}
+
+Pessoa <|-- Cliente : "é um"
+Veiculo <|-- CarroPasseio : "é um"
+Veiculo <|-- Caminhonete : "é um"
+
+Cliente "1" *-- "0..*" Aluguel : "tem um"
+Veiculo "1" -- "1" Aluguel : "está em"
+
+interface Imprimivel {
+    +gerarRelatorio()
+}
+
+Cliente ..|> Imprimivel
+Veiculo ..|> Imprimivel
+Aluguel ..|> Imprimivel
+
+@enduml
