@@ -8,10 +8,28 @@ import com.aluguelcarro.service.Dados;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.PrintStream;
 
+/**
+ * Classe principal da interface grafica do sistema.
+ *
+ * Paradigmas de POO aplicados:
+ * - Encapsulamento: Esconde a complexidade da logica de negocio por tras de botoes
+ * e janelas de dialogo. A interacao com o usuario e controlada por esta classe.
+ * - Coesao: Centraliza toda a logica da interface grafica em uma unica classe.
+ * - Serializacao: Salva e carrega o estado do sistema (clientes, frota, alugueis)
+ * para garantir a persistencia dos dados entre as sessoes.
+ * - Tratamento de Excecoes: Lida com erros de input do usuario e excecoes de negocio
+ * de forma visual e amigavel.
+ * - Acoplamento Fraco: Se comunica com as classes de servico e modelo, mas e
+ * independente da implementacao interna delas.
+ */
 public class TelaPrincipal extends JFrame {
     private ServicoAluguel servicoAluguel;
     private List<Veiculo> frota;
@@ -27,6 +45,7 @@ public class TelaPrincipal extends JFrame {
 
     public TelaPrincipal() {
         this.servicoAluguel = new ServicoAluguel();
+        // Carrega os dados persistidos no inicio do programa
         this.clientes = (List<Cliente>) Dados.carregarDados(ARQUIVO_CLIENTES);
         this.frota = (List<Veiculo>) Dados.carregarDados(ARQUIVO_VEICULOS);
         this.alugueisAtivos = (List<Aluguel>) Dados.carregarDados(ARQUIVO_ALUGUEIS);
@@ -36,12 +55,21 @@ public class TelaPrincipal extends JFrame {
         if (alugueisAtivos == null) alugueisAtivos = new ArrayList<>();
 
         initComponents();
+
+        // Adiciona um WindowListener para salvar os dados quando a janela for fechada
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                salvarESair();
+            }
+        });
     }
 
     private void initComponents() {
         setTitle("Sistema de Alocacao de Veiculos");
         setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Define para nao fechar automaticamente, permitindo salvar dados.
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         
         JPanel painelBotoes = new JPanel();
         painelBotoes.setLayout(new BoxLayout(painelBotoes, BoxLayout.Y_AXIS));
@@ -78,10 +106,12 @@ public class TelaPrincipal extends JFrame {
         container.add(painelBotoes, BorderLayout.WEST);
         container.add(scrollPane, BorderLayout.CENTER);
 
+        // Redireciona a saida do console para a JTextArea
         PrintStream printStream = new PrintStream(new CustomOutputStream(logArea));
         System.setOut(printStream);
         System.setErr(printStream);
 
+        // Adiciona os ouvintes de eventos
         btnCadastrarVeiculo.addActionListener(e -> cadastrarVeiculo());
         btnCadastrarCliente.addActionListener(e -> cadastrarCliente());
         btnAlugarVeiculo.addActionListener(e -> alugarVeiculo());
@@ -111,7 +141,7 @@ public class TelaPrincipal extends JFrame {
                 return;
             }
             frota.add(novoVeiculo);
-            System.out.println("Veiculo " + modelo + " cadastrado com sucesso");
+            System.out.println("Veiculo " + modelo + " cadastrado com sucesso!");
         } catch (NumberFormatException e) {
             System.out.println("Entrada de preco invalida.");
         }
@@ -151,14 +181,14 @@ public class TelaPrincipal extends JFrame {
         Veiculo veiculo = (Veiculo) JOptionPane.showInputDialog(this, "Selecione o veiculo:", "Alugar Veiculo", JOptionPane.QUESTION_MESSAGE, null, disponiveis.toArray(), disponiveis.get(0));
         if (veiculo == null) return;
 
-        String diasStr = JOptionPane.showInputDialog(this, "Número de dias para o aluguel:");
+        String diasStr = JOptionPane.showInputDialog(this, "Numero de dias para o aluguel:");
         try {
             int dias = Integer.parseInt(diasStr);
             Aluguel novoAluguel = servicoAluguel.alugarVeiculo(cliente, veiculo, dias);
             alugueisAtivos.add(novoAluguel);
             System.out.println("Aluguel de " + veiculo.getModelo() + " realizado com sucesso por " + dias + " dias.");
         } catch (NumberFormatException e) {
-            System.out.println("Número de dias invalido.");
+            System.out.println("Numero de dias invalido.");
         } catch (VeiculoNaoDisponivelException | AluguelInvalidoException e) {
             System.out.println("Erro: " + e.getMessage());
         }
@@ -194,7 +224,8 @@ public class TelaPrincipal extends JFrame {
     
     private void listarVeiculosAlugados() {
         System.out.println("--- Relatorio de Veiculos Alugados ---");
-        boolean encontrado = false; if (alugueisAtivos.isEmpty()) {
+        boolean encontrado = false;
+        if (alugueisAtivos.isEmpty()) {
             System.out.println("Nenhum veiculo alugado no momento.");
             return;
         }
